@@ -1,6 +1,6 @@
 /// @description De camera in het spel
 #macro aspect_ratio display_get_width() / display_get_height()
-#macro aa_amount 4
+#macro aa_amount 0
 #macro sgt sprite_get_texture
 #macro FOREST_MASKS working_directory + "masks/forest_masks.ini"
 #macro SHOPS working_directory + "masks/shops_positions.ini"
@@ -53,6 +53,7 @@ global.keyboard = [
 	["A", "S", "D", "F", "G", "H", "J", "K", "L"],
 	["Z", "X", "C", "V", "B", "N", "M"]
 ];
+current_letter = 0;
 
 dice_shine = [];
 dice_shine[DICE_TYPES.ONE_TWO_THREE] = 0.15;
@@ -559,3 +560,6 @@ if(DEBUGGING) {
 		feathers: 35,
 	});
 }
+
+global.dual_shock_left = 0;
+global.dual_shock_right = 0;

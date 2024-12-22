@@ -65,9 +65,19 @@ offered_right_end = 0;
 offered_right_ease = 0;
 offered_right = 0;
 
-force_angry = 0;
+force_angry = -20 ;
 can_purchase = true;
 
-give_random_card = true;
+give_random_card = false;
 random_card_timer = 0;
 random_card_alpha = 0;
+
+feng_claw_alpha = 0;
+feng_strike = 0;
+feng_can_harm = false;
+
+hurt_alpha = 0;
+heartbeat = 60;
+
+is_leaving = false;
+leave_timer = 120;

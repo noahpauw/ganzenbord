@@ -123,6 +123,46 @@ if(global.adding_player) {
 	draw_line_color(_x - dw / 4, _y, _x + dw / 4, _y, c_ltgray, c_ltgray);
 	draw_text_shadow(_x, _y, new_player_name, c_white, 1);
 	
+	draw_set_halign(fa_center);
+	draw_set_valign(fa_middle);
+	
+	// Een toetsenbord
+	_x = _dw / 2;
+	_y += 120;
+	var _ind = 0;
+	
+	for(var _i = 0; _i < array_length(global.keyboard); _i++) {
+		// Drie rijen toetsen
+		var _calc_row_width = 0;
+		var _row = global.keyboard[_i];
+		for(var _j = 0; _j < array_length(_row); _j++) {
+			_calc_row_width += string_width("M") + 8;
+		}
+		_x = round(_dw / 2 - _calc_row_width / 2);
+		for(var _j = 0; _j < array_length(_row); _j++) {
+			draw_text(_x, _y, gp_hold(gp_shoulderlb, 0) ? string_upper(_row[_j]) : string_lower(_row[_j]));
+			var _w = round(string_width("M") / 2);
+			draw_set_alpha(0.3);
+			draw_rectangle_color(_x - _w - 8, _y - line() / 2 - 4, _x + _w + 8, _y + line() / 2 + 4, c_white, c_white, c_white, c_white, true);
+			
+			if(current_letter == _ind) {
+				draw_set_alpha(0.2);
+				draw_rectangle_color(_x - _w - 8, _y - line() / 2 - 4, _x + _w + 8, _y + line() / 2 + 4, c_white, c_white, c_white, c_white, false);
+				
+				if(gp_pressed(gp_face1, 0)) {
+					new_player_name += gp_hold(gp_shoulderlb, 0) ? string_upper(_row[_j]) : string_lower(_row[_j]);
+					audio_play_sound(snd_type, 10, false, 1);
+				}
+			}
+			
+			draw_set_alpha(1);
+			
+			_x += string_width("M") + 16;
+			_ind++;
+		}
+		_y += line() + 8;
+	}
+	
 	draw_set_halign(fa_left);
 	draw_set_valign(fa_top);
 }
@@ -149,12 +189,19 @@ if(!array_contains([GAME_PROGRESS.PICKING_DIE_OR_CARDS, GAME_PROGRESS.PICKING_DI
 	
 		draw_text_shadow(_x, _y, _player.name, c_white, 1);
 		
+		_x += string_width(_player.name) + 26;
+		
 		for(var _j = 0; _j < _player.hearts; _j++) {
 			var _beat_x = lerp(0.9, 1.1, power(abs(dcos(current_time / 6 + _player.beat_offset[_j])), 8));
 			var _beat_y = lerp(0.92, 1.05, power(abs(dsin(current_time / 6 - 40 + _player.beat_offset[_j])), 8));
 			var _s = lerp(0, 1, ease_in_out_back(_player.beat_size[_j]));
-			draw_sprite_ext(spr_heart, 0, _x + string_width(_player.name) + 26 + _j * 24, _y + line() / 2 + dsin(current_time / 1000 * 180 + _player.beat_offset[_j]), _beat_x * _s, _beat_y * _s, 0, c_white, 1);
+			draw_sprite_ext(spr_heart, 0, _x, _y + line() / 2 + dsin(current_time / 1000 * 180 + _player.beat_offset[_j]), _beat_x * _s, _beat_y * _s, 0, c_white, 1);
+			_x += 24;
 		}
+		_x += 24;
+		draw_sprite_ext(spr_feather_currency, 0, _x, _y + line() / 2, 0.5 + perlin_noise(current_time / 630 + _i * 29) * 0.1, 0.5 + perlin_noise(current_time / 422 + _i * 32) * 0.1, perlin_noise(current_time / 494 + _i * 16) * 5, c_white, 1);
+		_x += 24;
+		draw_text(_x, _y, string("×{0}", _player.feathers));
 	
 		draw_set_halign(fa_left);
 		draw_set_valign(fa_top);
@@ -518,18 +565,20 @@ if(global.game_progress == GAME_PROGRESS.ROLLING_DIE) {
 	
 	draw_set_font(fnt_title);
 	
-	draw_text_shadow(_x, _y, _player.name, c_white, 1);
-	_y += line() + 53;
+	if(!obj_vendor.is_leaving) {
+		draw_text_shadow(_x, _y, _player.name, c_white, 1);
+		_y += line(fnt_title);
 	
-	draw_set_font(fnt_subtitle);
-	draw_sprite_ext(spr_feather_currency, 0, _x, _y, 1 + perlin_noise(current_time / 630) * 0.2, 1 + perlin_noise(current_time / 433) * 0.2, 0, c_white, 1);
-	_x += 26.5;
-	draw_text_color(_x, _y - line() / 2, "×" + string(_player.feathers), c_white, c_white, c_white, c_white, 1);
+		draw_set_font(fnt_subtitle);
+		draw_sprite_ext(spr_feather_currency, 0, _x, _y, 1 + perlin_noise(current_time / 630) * 0.2, 1 + perlin_noise(current_time / 433) * 0.2, 0, c_white, 1);
+		_x += 26.5;
+		draw_text_color(_x, _y - line() / 2, "×" + string(_player.feathers), c_white, c_white, c_white, c_white, 1);
 	
-	_x += 100;
-	draw_sprite_ext(spr_heart, 0, _x, _y, 1 + perlin_noise(current_time / 630) * 0.2, 1 + perlin_noise(current_time / 433) * 0.2, 0, c_white, 1);
-	_x += 19;
-	draw_text_color(_x, _y - line() / 2, "×" + string(_player.hearts), c_white, c_white, c_white, c_white, 1);
+		_x += 100;
+		draw_sprite_ext(spr_heart, 0, _x, _y, 1 + perlin_noise(current_time / 630) * 0.2, 1 + perlin_noise(current_time / 433) * 0.2, 0, c_white, 1);
+		_x += 19;
+		draw_text_color(_x, _y - line() / 2, "×" + string(_player.hearts), c_white, c_white, c_white, c_white, 1);
+	}
 	
 	// Teken ook de kaarten die hij heeft
 	with(obj_vendor) {
@@ -584,14 +633,14 @@ if(global.game_progress == GAME_PROGRESS.ROLLING_DIE) {
 				draw_text_ext_transformed_color(_x + _offset2, _y, string("×{0}", _card.cost), string_height("M"), 600, _s2, _s2, 1, c_white, c_white, c_ltgray, c_ltgray, obj_camera.fade_inventory2 * obj_camera.flame_alpha);
 			
 				_x = 129;
-				_y += line(fnt_title);
+				_y += line(fnt_title) / 1.5;
 				draw_set_font(fnt_subtitle);
 				draw_text_ext_transformed_color(_x + _offset2, _y, _card.description, string_height("M"), 600, _s2, _s2, 1, c_white, c_white, c_ltgray, c_ltgray, obj_camera.fade_inventory2 * obj_camera.flame_alpha);
 			
 				// Keihard afdingen
 				if(obj_camera.current_atmosphere == ATMOSPHERE.HAGGLING) {
 					_x = _dw / 2;
-					_y = _dh - 220;
+					_y = _dh - 260;
 					
 					var _alpha = made_bid ? 0.5 : 1;
 				
@@ -728,11 +777,61 @@ if(global.game_progress == GAME_PROGRESS.ROLLING_DIE) {
 			draw_set_halign(fa_center);
 			draw_set_valign(fa_middle);
 			
-			draw_text_color(_dw / 2, _dh / 2, "Feng heeft je een extra kaart gegeven", c_white, c_white, c_white, c_white, random_card_alpha);
+			draw_text_color(_dw / 2, _dh / 2, "Feng heeft je een extra kaart gegeven.", c_white, c_white, c_white, c_white, random_card_alpha);
 			
 			draw_set_halign(fa_left);
 			draw_set_valign(fa_top);
 		}
+		
+		// Controls
+		_x = _dw / 2;
+		_y = display_get_height() - 100;
+		var _options = [];
+		
+		if(!is_leaving) {
+			if(obj_camera.current_atmosphere == ATMOSPHERE.IN_SHOP) {
+				_options[0] = {
+					prompt: "Bieden",
+					button: PS4_BUTTONS.CROSS,
+				};
+				_options[1] = {
+					prompt: "Verlaten",
+					button: PS4_BUTTONS.TRIANGLE,
+				}
+			} else {
+				_options[0] = {
+					prompt: "Bod doen",
+					button: PS4_BUTTONS.CROSS,
+				};
+				_options[1] = {
+					prompt: "Bod aanpassen",
+					button: PS4_BUTTONS.DPAD_FULL,
+				};
+				_options[2] = {
+					prompt: "Annuleren",
+					button: PS4_BUTTONS.TRIANGLE,
+				}
+			}
+		}
+		
+		for(var _i = 0; _i < array_length(_options); _i++) {
+			_x -= string_width(_options[_i].prompt) / 2 + 25;
+			_x -= 37 / 2;
+		}
+		
+		for(var _i = 0; _i < array_length(_options); _i++) {
+			draw_sprite_ext(spr_ps4_face_buttons, _options[_i].button, _x, _y, 1, 1, 0, c_white, 1);
+			_x += 37;
+			draw_text_color(_x, _y - line() / 2, _options[_i].prompt, c_white, c_white, c_white, c_white, 1);
+			_x += string_width(_options[_i].prompt) + 50;
+		}
+		
+		// Feng's klauwen
+		draw_sprite_ext(spr_feng_claws, feng_strike, _dw / 2, _dh / 2, -1, 1, 0, c_white, feng_claw_alpha);
+		
+		shader_set(shd_hurt);
+		draw_sprite_ext(spr_vignette, 0, 0, 0, _dw / 512, _dh / 512, 0, c_white, hurt_alpha);
+		shader_reset();
 	}
 }
 

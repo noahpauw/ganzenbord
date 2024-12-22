@@ -603,6 +603,10 @@ switch(global.game_progress) {
 		} else {
 			dice_throw_z_speed -= 0.07 / 4 * dlt;
 			dice_throw_z += dice_throw_z_speed * dlt;
+			
+			if(_action_button) {
+				dice_throw_z_speed = 0;
+			}
 		
 			if(dice_throw_z <= 0) {
 				if(abs(dice_throw_z_speed) > 0.07) {
@@ -612,6 +616,9 @@ switch(global.game_progress) {
 					dice_rotation_xspeed = random_range(4, 7);
 					dice_rotation_yspeed = random_range(3, 7);
 					dice_rotation_zspeed = random_range(4, 8);
+					
+					global.dual_shock_left = 0.5;
+					global.dual_shock_right = global.dual_shock_left;
 				
 					audio_play_sound(snd_move_piece, 1, false, 0.7, 0, random_range(0.96, 1.04));
 				} else {
@@ -705,33 +712,20 @@ switch(global.game_progress) {
 			if(candle_brightness == -1 && !audio_is_playing(snd_match_lit)) {
 				audio_play_sound(snd_match_lit, 1, false, 1);
 			}
-			flame_alpha += (1 - flame_alpha) / 7 * dlt;
-			candle_brightness += (0 - candle_brightness) / 120 * dlt;
+
+			if(!obj_vendor.is_leaving) {
+				candle_brightness += (0 - candle_brightness) / 120 * dlt;
+				flame_alpha += (1 - flame_alpha) / 7 * dlt;
+			} else {
+				if(obj_vendor.leave_timer <= 90)
+					flame_alpha -= flame_alpha / 7 * dlt;
+			}
 		}
 		
 		// Leave hut
 		if(_inventory_button) {
-			if(current_atmosphere != ATMOSPHERE.HAGGLING && obj_vendor.haggle_movement == 0) {
-				global.game_progress = GAME_PROGRESS.ROLLING_DIE;
-				current_atmosphere = ATMOSPHERE.CALM;
-				var _found = false;
-				var _ind = 0;
-				var _player_pawn = get_current_player();
-				while(!_found) {
-					var _inst = instance_nth_nearest(_player_pawn.x, _player_pawn.y, obj_tile, _ind);
-					if(!_inst.do_not_render && !position_meeting(_inst.x, _inst.y, obj_shop) && !position_meeting(_inst.x, _inst.y, obj_pawn)) {
-						with(_player_pawn) {
-							to_x = _inst.x;
-							to_y = _inst.y;
-							cur_x = x;
-							cur_y = y;
-							move_lerp = 0;
-							can_noise = true;
-						}
-						_found = true;
-					}
-					_ind++;
-				}
+			if(current_atmosphere != ATMOSPHERE.HAGGLING && obj_vendor.haggle_movement == 0 && !obj_vendor.is_leaving) {
+				obj_vendor.is_leaving = true;
 			}
 		}
 		break;
@@ -864,4 +858,31 @@ if(card_animation >= 0) {
 				break;
 		}
 	}
+}
+
+// Hoe erg de controller trilt
+global.dual_shock_left -= global.dual_shock_left / 10 * dlt;
+global.dual_shock_right -= global.dual_shock_right / 10 * dlt;
+
+gp_vibrations();
+gamepad_set_color(4, c_red);
+
+// Letters invoeren
+if(global.adding_player) {
+	if(_scroll_right) {
+		if(current_letter < 25) {
+			current_letter++;
+			audio_play_sound(snd_select_tile, 1, 0, 0.5, 0, 2);
+		} else {
+			audio_play_sound(snd_deny, 10, false, 1);
+		}
+	} else if(_scroll_left) {
+		if(current_letter > 0) {
+			current_letter--;
+			audio_play_sound(snd_select_tile, 1, 0, 0.5, 0, 2);
+		} else {
+			audio_play_sound(snd_deny, 10, false, 1);
+		}
+	}
+	current_letter = clamp(current_letter, 0, 25);
 }

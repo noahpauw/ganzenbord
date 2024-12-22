@@ -10,7 +10,7 @@
   "bitRate": 128,
   "compression": 0,
   "conversionMode": 0,
-  "duration": 0.22415,
+  "duration": 3.138615,
   "parent": {
     "name": "shop",
     "path": "folders/Sounds/shop.yy",

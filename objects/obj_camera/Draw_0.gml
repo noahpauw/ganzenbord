@@ -1,4 +1,10 @@
 /// @description Maak een projectie voor de spelers
+
+// Laad deze afbeeldingen in
+draw_sprite(spr_counter_left, 0, -200, -200);
+draw_sprite(spr_counter_right, 0, -200, -200);
+
+// Surfaces
 if(!surface_exists(surf))
 	surf = surface_create(display_get_width(), display_get_height(), surface_rgba32float);
 	

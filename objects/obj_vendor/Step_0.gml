@@ -1,4 +1,56 @@
 /// @description Gedrag verkoper
+if(is_leaving) {
+	leave_timer -= 0.35 * dlt;
+	force_angry = 1;
+	if(leave_timer <= 90) {
+		if(leave_timer >= 85 && !audio_is_playing(snd_match_lit))
+			audio_play_sound(snd_match_lit, 10, false, 0.35, 0, 1.5);
+			
+		with(obj_camera) {
+			candle_brightness += (-1 - candle_brightness) / 80 * dlt;
+			fade_inventory = 0;
+			fade_inventory2 = 0;
+			fade_inventory3 = 0;
+		}
+	}
+	if(leave_timer <= 70) {
+		hold_eyes_shut = 1;
+	}
+	if(leave_timer <= 0) {
+		is_leaving = false;
+		repeat(13) {
+			array_push(cards_in_stock, irandom(CARD_TYPES.DECK_SIZE - 1));
+		}
+		
+		// Zet de speler ergens neer
+		hold_eyes_shut = 240;
+		blink = 1;
+		blink_timer = 240;
+		
+		global.game_progress = GAME_PROGRESS.ROLLING_DIE;
+		obj_camera.current_atmosphere = ATMOSPHERE.CALM;
+		var _found = false;
+		var _ind = 0;
+		var _player_pawn = get_current_player();
+		while(!_found) {
+			var _inst = instance_nth_nearest(_player_pawn.x, _player_pawn.y, obj_tile, _ind);
+			if(!_inst.do_not_render && !position_meeting(_inst.x, _inst.y, obj_shop) && !position_meeting(_inst.x, _inst.y, obj_pawn)) {
+				with(_player_pawn) {
+					to_x = _inst.x;
+					to_y = _inst.y;
+					cur_x = x;
+					cur_y = y;
+					move_lerp = 0;
+					can_noise = true;
+				}
+				_found = true;
+			}
+			_ind++;
+		}
+		global.music_change_speed = FAST_MUSIC_CHANGE;
+	}	
+}
+
 if(global.game_progress != GAME_PROGRESS.WITH_TRADER)
 	exit;
 	
@@ -19,8 +71,8 @@ var _player = get_current_player_in_list();
 x = obj_camera.x;
 y = obj_camera.y;
 
-if(!made_bid) {
-	if(_scroll_left) {
+if(!made_bid && !is_leaving) {
+	if(_scroll_left || _scroll_down) {
 		if(obj_camera.current_atmosphere != ATMOSPHERE.HAGGLING) {
 			movement = 0;
 			if(current_card_index > 0) {
@@ -55,7 +107,7 @@ if(!made_bid) {
 				audio_play_sound(snd_deny, 10, false, 1, 0, 1);
 			}
 		}
-	} else if(_scroll_right) {
+	} else if(_scroll_right || _scroll_up) {
 		if(obj_camera.current_atmosphere != ATMOSPHERE.HAGGLING) {
 			movement = 0;
 			if(current_card_index < array_length(cards_in_stock) - 1) {
@@ -140,12 +192,13 @@ if(hold_eyes_shut <= 0) {
 	}
 } else {
 	hold_eyes_shut -= dlt;
+	blink += (1 / 120) * dlt;
 }
 blink = clamp(blink, 0, 1);
 
 if(obj_camera.current_atmosphere == ATMOSPHERE.HAGGLING) {
 	// Checken of de verkoper akkoord gaat met je bod
-	if(_action_button) {
+	if(_action_button && !is_leaving) {
 		if(can_purchase) {
 			if(!made_bid) {
 				made_bid = true;
@@ -160,7 +213,7 @@ if(obj_camera.current_atmosphere == ATMOSPHERE.HAGGLING) {
 		}
 	}
 	
-	if(_return_button) {
+	if(_return_button && !is_leaving) {
 		obj_camera.current_atmosphere = ATMOSPHERE.IN_SHOP;
 		global.music_change_speed = INSTANT_MUSIC_CHANGE;
 		current_item_price = 0;
@@ -180,8 +233,10 @@ if(obj_camera.current_atmosphere == ATMOSPHERE.HAGGLING) {
 		}
 	}
 	
+	feng_angry = false;
+	
 	// Afdingen
-	if(_action_button) {
+	if(_action_button && !is_leaving) {
 		obj_camera.current_atmosphere = ATMOSPHERE.HAGGLING;
 		global.music_change_speed = INSTANT_MUSIC_CHANGE;
 		haggle_index = current_card_index;
@@ -248,8 +303,12 @@ if(made_bid) {
 			_accept_bid = false;
 		}
 		if(!_accept_bid) {
-			_player.hearts--;
-			audio_play_sound(snd_bid_lost, 1, false, 1);
+			// _player.hearts--;
+			audio_play_sound(snd_whoosh, 1, false, 1);
+			feng_can_harm = true;
+			feng_strike = 0;
+			feng_claw_alpha = 0;
+			force_angry = 200;
 		} else {
 			_player.feathers -= offered_price;
 			audio_play_sound(snd_bid_won, 1, false, 0.85);
@@ -284,6 +343,8 @@ if(purchased_card_type != -1) {
 			random_card_timer = 240;
 			audio_play_sound(snd_bid_won, 10, false, 0.7, 0, 2);
 			give_random_card = false;
+			if(array_length(_player.cards) < 8)
+				array_push(_player.cards, irandom(CARD_TYPES.DECK_SIZE));
 		}
 	}
 }
@@ -319,4 +380,31 @@ if(random_card_timer >= 0) {
 	random_card_timer -= 1 * dlt;
 } else {
 	random_card_alpha -= random_card_alpha / 7 * dlt;
+}
+
+if(feng_can_harm) {
+	feng_claw_alpha += (1 - feng_claw_alpha) / 4 * dlt;
+	if(feng_strike >= 12) {
+		feng_can_harm = false;
+		audio_play_sound(snd_bid_lost, 1, false, 0.25);
+		_player.hearts--;
+		hurt_alpha = 1;
+	}
+}
+
+if(feng_strike < sprite_get_number(spr_feng_claws) - 1) {
+	feng_strike += 0.75 * dlt;
+}
+feng_strike = clamp(feng_strike, 0, sprite_get_number(spr_feng_claws) - 1);
+
+if(hurt_alpha > 0)
+	hurt_alpha -= 1 / 140 * dlt;
+	
+// Player is hurt
+if(_player.hearts == 1) {
+	heartbeat -= 1 * dlt;
+	if(heartbeat <= 0) {
+		heartbeat = 80;
+		hurt_alpha += 0.4;
+	}
 }

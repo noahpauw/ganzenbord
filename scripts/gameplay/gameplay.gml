@@ -193,6 +193,13 @@ function gp_pressed(_button, _controller_id) {
 	return gamepad_button_check_pressed(_check == 1 ? _controller_id + 4 : 4, _button);
 }
 
+function gp_hold(_button, _controller_id) {
+	var _check = gamepad_default(_controller_id + 4);
+	if(!_check == -1)
+		return false;
+	return gamepad_button_check(_check == 1 ? _controller_id + 4 : 4, _button);
+}
+
 function gp_axis(_axis, _controller_id, _deadzone = 0.07) {
 	var _check = gamepad_default(_controller_id + 4);
 	if(gamepad_default(_controller_id + 4) == -1)
@@ -210,4 +217,12 @@ function gp_value(_button, _controller_id) {
 	if(_check == -1)
 		return 0;
 	return gamepad_button_value(_check == 1 ? _controller_id + 4 : 4, _button);
+}
+
+function gp_vibrations() {
+	for(var _i = 4; _i < 12; _i++) {
+		if(!gamepad_is_connected(_i))
+			continue;
+		gamepad_set_vibration(_i, global.dual_shock_left, global.dual_shock_right);
+	}
 }
